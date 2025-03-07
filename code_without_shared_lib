@@ -1,0 +1,32 @@
+pipeline {
+    
+    agent {label "vinod"}
+
+    stages{
+        
+        stage('code'){
+            steps{
+                git url: "https://github.com/deepakattri2529/django-notes-app.git", branch: "main"
+            }
+        }
+        stage('build'){
+            steps{
+                sh "docker build -t notes-app:latest ."
+            }
+        }
+        stage('push') {
+            steps {
+                withCredentials([usernamePassword('credentialsId':"docker-hub-cred",passwordVariable:"dockerHubPass",usernameVariable:"dockerUserHub")]){
+                sh "docker login -u ${env.dockerUserHub} -p ${env.dockerHubPass}"
+                sh "docker image tag notes-app:latest ${env.dockerUserHub}/notes-app:latest"
+                sh "docker push deepakattri0007/notes-app:latest"
+                }
+            }
+        }
+        stage('deploy'){
+            steps{
+                sh "docker run -d -p 8000:8000 notes-app:latest"
+            }
+        }
+    }
+}
